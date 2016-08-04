@@ -3,6 +3,7 @@ package kafka_client
 import (
 	"testing"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParseFetchResponse(t *testing.T) {
@@ -10,7 +11,7 @@ func TestParseFetchResponse(t *testing.T) {
 	c.Connect()
 	defer c.Close()
 
-	response := c.SendFetch(FetchRequest{
+	response, err := c.SendFetch(FetchRequest{
 		header:RequestMessage{
 			CorrelationId:99,
 			ClientId:"testclient"},
@@ -21,6 +22,8 @@ func TestParseFetchResponse(t *testing.T) {
 			{TopicName:"test", PartitionTopicFetchRequest:[]PartitionTopicFetchRequest{
 				{Partition:0, FetchOffset:0, MaxBytes:1000000}}}}})
 
+	assert.NoError(t, err)
+
 	for _, t := range response.TopicFetchResponse {
 		fmt.Println("Topic: " + t.TopicName)
 
@@ -29,10 +32,10 @@ func TestParseFetchResponse(t *testing.T) {
 			fmt.Println(" ErrorCode: ", p.ErrorCode)
 			fmt.Println(" HighwaterMarkOffset: ", p.HighwaterMarkOffset)
 
-			for _,mSet := range p.MessageSet {
+			for _, mSet := range p.MessageSet {
 				fmt.Println("  Offset: ", mSet.Offset)
 				fmt.Println("  MagicByte: ", mSet.Message.MagicByte)
-				fmt.Println("  Attributes: ",  mSet.Message.Attributes)
+				fmt.Println("  Attributes: ", mSet.Message.Attributes)
 				fmt.Println("  Key: " + string(mSet.Message.Key))
 				fmt.Println("  Value: " + string(mSet.Message.Value))
 				fmt.Println("---")

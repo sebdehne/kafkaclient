@@ -3,6 +3,7 @@ package kafka_client
 import (
 	"testing"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestClient(t *testing.T) {
@@ -11,11 +12,13 @@ func TestClient(t *testing.T) {
 	c.Connect()
 	defer c.Close()
 
-	response := c.SendMetaData(TopicMetadataRequest{
+	response, err := c.SendMetaData(TopicMetadataRequest{
 		RequestMessage{
 			CorrelationId:99,
 			ClientId:"testclient"},
 		[]string{}})
+
+	assert.NoError(t, err)
 
 	fmt.Println(response)
 }

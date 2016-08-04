@@ -4,6 +4,7 @@ import (
 	"testing"
 	"fmt"
 	"time"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParseProduceResponse(t *testing.T) {
@@ -11,7 +12,7 @@ func TestParseProduceResponse(t *testing.T) {
 	c.Connect()
 	defer c.Close()
 
-	response := c.SendProduce(ProduceRequest{
+	response, err := c.SendProduce(ProduceRequest{
 		header:RequestMessage{
 			CorrelationId:99,
 			ClientId:"testclient"},
@@ -26,6 +27,8 @@ func TestParseProduceResponse(t *testing.T) {
 						Timestamp:makeTimestamp(),
 						Key:[]byte("text/plain"),
 						Value:[]byte("TestMsg2")}}}}}}}})
+
+	assert.NoError(t, err)
 
 	fmt.Println(response)
 }

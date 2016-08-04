@@ -2,8 +2,8 @@ package kafka_client
 
 import (
 	"net"
-	"log"
 	"bytes"
+	"errors"
 )
 
 func NewClient(host string, port string) SimpleClient {
@@ -16,35 +16,39 @@ type SimpleClient struct {
 	conn net.Conn
 }
 
-func (client *SimpleClient) Connect() {
+func (client *SimpleClient) Connect() error {
 	conn, err := net.Dial("tcp", client.host + ":" + client.port)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	client.conn = conn
+
+	return nil
 }
 
 func (client *SimpleClient) Close() {
 	client.conn.Close()
 }
 
-func (client *SimpleClient) send(data []byte) {
+func (client *SimpleClient) send(data []byte) error {
 	if client.conn == nil {
-		panic("Client not connected")
+		return errors.New("Client not connected")
 	}
 
 	data = append(int32ToBytes(int32(len(data))), data...)
 
 	client.conn.Write(data)
+
+	return nil
 }
 
-func (client *SimpleClient) receive() []byte {
+func (client *SimpleClient) receive() ([]byte, error) {
 	readBytes := make([]byte, 1024)
 	readBuf := bytes.NewBuffer([]byte{})
 	for true {
 		n, err := client.conn.Read(readBytes)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 
 		readBuf.Write(readBytes[:n])
@@ -61,33 +65,42 @@ func (client *SimpleClient) receive() []byte {
 
 
 	// TODO handle when we read beyond the response
-	return readBuf.Bytes()[4:]
+	return readBuf.Bytes()[4:], nil
 }
 
-func (client *SimpleClient) SendMetaData(req TopicMetadataRequest) MetadataResponse {
+func (client *SimpleClient) SendMetaData(req TopicMetadataRequest) (MetadataResponse, error) {
 	client.send(req.toBytes())
-	msg := client.receive()
+	msg, err := client.receive()
+	if err != nil {
+		return MetadataResponse{}, err
+	}
 
 	correlationId, _ := readInt32(msg, 0)
 
-	return ParseMetadataResponse(msg[4:], ResponseMessage{CorrelationId:correlationId})
+	return ParseMetadataResponse(msg[4:], ResponseMessage{CorrelationId:correlationId}), nil
 }
 
-func (client *SimpleClient) SendProduce(req ProduceRequest) ProduceResponse {
+func (client *SimpleClient) SendProduce(req ProduceRequest) (ProduceResponse, error) {
 	client.send(req.Bytes())
-	msg := client.receive()
+	msg, err := client.receive()
+	if err != nil {
+		return ProduceResponse{}, err
+	}
 
 	correlationId, _ := readInt32(msg, 0)
 
-	return ParseProduceResponse(msg[4:], ResponseMessage{CorrelationId:correlationId})
+	return ParseProduceResponse(msg[4:], ResponseMessage{CorrelationId:correlationId}), nil
 }
 
-func (client *SimpleClient) SendFetch(req FetchRequest) FetchResponse {
+func (client *SimpleClient) SendFetch(req FetchRequest) (FetchResponse, error) {
 	client.send(req.toBytes())
-	msg := client.receive()
+	msg, err := client.receive()
+	if err != nil {
+		return FetchResponse{}, err
+	}
 
 	correlationId, _ := readInt32(msg, 0)
 
-	return ParseFetchResponse(msg[4:], ResponseMessage{CorrelationId:correlationId})
+	return ParseFetchResponse(msg[4:], ResponseMessage{CorrelationId:correlationId}), nil
 }
 
