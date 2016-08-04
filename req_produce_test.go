@@ -19,13 +19,13 @@ func TestParseProduceResponse(t *testing.T) {
 		Timeout:5000,
 		ProduceTopicRequest:[]ProduceTopicRequest{
 			{TopicName:"test", PartitionMessageSet:[]PartitionMessageSet{
-				{Partition:0, MessageSet:[]MessageSet{
+				{Partition:0, MessageSet:[]MessageSetItem{
 					{Offset:0, Message:Message{
 						MagicByte:1,
 						Attributes:0,
 						Timestamp:makeTimestamp(),
-						Key:[]byte(""),
-						Value:[]byte("TestMsg")}}}}}}}})
+						Key:[]byte("text/plain"),
+						Value:[]byte("TestMsg2")}}}}}}}})
 
 	fmt.Println(response)
 }

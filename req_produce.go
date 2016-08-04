@@ -2,7 +2,7 @@ package kafka_client
 
 import (
 	"bytes"
-	"github.com/klauspost/crc32"
+	"hash/crc32"
 )
 
 func ParseProduceResponse(in []byte, header ResponseMessage) ProduceResponse {
@@ -56,7 +56,7 @@ type ProduceRequest struct {
 	ProduceTopicRequest []ProduceTopicRequest
 }
 
-func (r ProduceRequest) toBytes() []byte {
+func (r ProduceRequest) Bytes() []byte {
 	buf := r.header.headerToBytes(0, 2)
 
 	buf.Write(int16ToBytes(r.RequiredAcks))
@@ -86,26 +86,34 @@ func (p ProduceTopicRequest) write(buf *bytes.Buffer) {
 
 type PartitionMessageSet struct {
 	Partition  int32
-	MessageSet []MessageSet
+	MessageSet []MessageSetItem
 }
 
 func (s PartitionMessageSet) write(buf *bytes.Buffer) {
 	buf.Write(int32ToBytes(s.Partition))
 
-	buf.Write(int32ToBytes(int32(len(s.MessageSet))))
+	msgSetBuf := bytes.NewBuffer([]byte{})
 	for _, msg := range s.MessageSet {
-		msg.write(buf)
+		msgSetBuf.Write(msg.Bytes())
 	}
+
+	// messageSetSize
+	buf.Write(int32ToBytes(int32(msgSetBuf.Len())))
+
+	// messageSet
+	buf.Write(msgSetBuf.Bytes())
 }
 
-type MessageSet struct {
+type MessageSetItem struct {
 	Offset  int64
 	Message Message
 }
 
-func (s MessageSet) write(buf *bytes.Buffer) {
+func (s MessageSetItem) Bytes() []byte {
+	buf := bytes.NewBuffer([]byte{})
 	buf.Write(int64ToBytes(s.Offset))
-	buf.Write(bytesToBytes(s.Message.toBytes()))
+	buf.Write(bytesToBytes(s.Message.Bytes()))
+	return buf.Bytes()
 }
 
 type Message struct {
@@ -116,7 +124,7 @@ type Message struct {
 	Value      []byte
 }
 
-func (m Message) toBytes() []byte {
+func (m Message) Bytes() []byte {
 	buf := bytes.NewBuffer([]byte{})
 
 	buf.Write(int8ToBytes(m.MagicByte))

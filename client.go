@@ -4,7 +4,6 @@ import (
 	"net"
 	"log"
 	"bytes"
-	"fmt"
 )
 
 func NewClient(host string, port string) SimpleClient {
@@ -67,7 +66,6 @@ func (client *SimpleClient) receive() []byte {
 
 func (client *SimpleClient) SendMetaData(req TopicMetadataRequest) MetadataResponse {
 	client.send(req.toBytes())
-	fmt.Println("Sent", req)
 	msg := client.receive()
 
 	correlationId, _ := readInt32(msg, 0)
@@ -76,12 +74,20 @@ func (client *SimpleClient) SendMetaData(req TopicMetadataRequest) MetadataRespo
 }
 
 func (client *SimpleClient) SendProduce(req ProduceRequest) ProduceResponse {
-	client.send(req.toBytes())
-	fmt.Println("Sent", req)
+	client.send(req.Bytes())
 	msg := client.receive()
 
 	correlationId, _ := readInt32(msg, 0)
 
 	return ParseProduceResponse(msg[4:], ResponseMessage{CorrelationId:correlationId})
+}
+
+func (client *SimpleClient) SendFetch(req FetchRequest) FetchResponse {
+	client.send(req.toBytes())
+	msg := client.receive()
+
+	correlationId, _ := readInt32(msg, 0)
+
+	return ParseFetchResponse(msg[4:], ResponseMessage{CorrelationId:correlationId})
 }
 
