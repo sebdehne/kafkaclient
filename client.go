@@ -62,14 +62,12 @@ func (client *SimpleClient) receive() ([]byte, error) {
 		}
 	}
 
-
-
 	// TODO handle when we read beyond the response
 	return readBuf.Bytes()[4:], nil
 }
 
 func (client *SimpleClient) SendMetaData(req TopicMetadataRequest) (MetadataResponse, error) {
-	client.send(req.toBytes())
+	client.send(req.Bytes())
 	msg, err := client.receive()
 	if err != nil {
 		return MetadataResponse{}, err
@@ -93,7 +91,7 @@ func (client *SimpleClient) SendProduce(req ProduceRequest) (ProduceResponse, er
 }
 
 func (client *SimpleClient) SendFetch(req FetchRequest) (FetchResponse, error) {
-	client.send(req.toBytes())
+	client.send(req.Bytes())
 	msg, err := client.receive()
 	if err != nil {
 		return FetchResponse{}, err
@@ -102,5 +100,17 @@ func (client *SimpleClient) SendFetch(req FetchRequest) (FetchResponse, error) {
 	correlationId, _ := readInt32(msg, 0)
 
 	return ParseFetchResponse(msg[4:], ResponseMessage{CorrelationId:correlationId}), nil
+}
+
+func (client *SimpleClient) SendOffsetRequest(req OffsetRequest) ([]OffsetResponseItem, ResponseMessage, error) {
+	client.send(req.Bytes())
+	msg, err := client.receive()
+	if err != nil {
+		return []OffsetResponseItem{}, ResponseMessage{}, err
+	}
+
+	correlationId, _ := readInt32(msg, 0)
+
+	return ParseOffsetResponse(msg[4:]), ResponseMessage{CorrelationId:correlationId}, nil
 }
 

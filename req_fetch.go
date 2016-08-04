@@ -84,7 +84,7 @@ type FetchRequest struct {
 	TopicFetchRequest []TopicFetchRequest
 }
 
-func (r FetchRequest) toBytes() []byte {
+func (r FetchRequest) Bytes() []byte {
 	buf := r.header.headerToBytes(1, 2)
 
 	buf.Write(int32ToBytes(r.ReplicaId))

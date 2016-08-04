@@ -13,6 +13,17 @@ func readInt32Array(in []byte, pos int) ([]int32, int) {
 	return result, pos
 }
 
+func readInt64Array(in []byte, pos int) ([]int64, int) {
+	result := make([]int64, 0)
+	arrayLen, pos := readInt32(in, pos)
+	var number int64
+	for i := 0; i < int(arrayLen); i++ {
+		number, pos = readInt64(in, pos)
+		result = append(result, number)
+	}
+	return result, pos
+}
+
 func int8ToBytes(in int8) []byte {
 	return []byte{byte(in)}
 }

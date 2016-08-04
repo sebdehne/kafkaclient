@@ -73,7 +73,7 @@ type TopicMetadataRequest struct {
 	TopicNames []string
 }
 
-func (r TopicMetadataRequest) toBytes() []byte {
+func (r TopicMetadataRequest) Bytes() []byte {
 	b := r.RequestMessage.headerToBytes(3, 0)
 
 	b.Write(int32ToBytes(int32(len(r.TopicNames))))
