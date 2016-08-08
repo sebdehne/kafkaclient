@@ -114,3 +114,15 @@ func (client *SimpleClient) SendOffsetRequest(req OffsetRequest) ([]OffsetRespon
 	return ParseOffsetResponse(msg[4:]), ResponseMessage{CorrelationId:correlationId}, nil
 }
 
+func (client *SimpleClient) SendGroupCoordinatorRequest(req GroupCoordinatorRequest) (GroupCoordinatorResponse, error) {
+	client.send(req.Bytes())
+	msg, err := client.receive()
+	if err != nil {
+		return GroupCoordinatorResponse{}, err
+	}
+
+	correlationId, _ := readInt32(msg, 0)
+
+	return ParseGroupCoordinatorResponse(msg[4:], ResponseMessage{CorrelationId:correlationId}), nil
+}
+
